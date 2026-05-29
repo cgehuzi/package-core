@@ -1,0 +1,21 @@
+# Зависимости
+node_modules/
+vendor/
+
+# Артефакты сборки/паковки
+dist/
+build/
+*.tgz
+*.tar.gz
+
+# Тесты
+.phpunit.cache/
+.phpunit.result.cache
+coverage/
+
+# ОС / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

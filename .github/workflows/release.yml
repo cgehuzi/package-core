@@ -1,0 +1,68 @@
+name: Release
+
+# Тег vX.Y.Z → собираем два архива (backend, frontend) и публикуем в GitHub Release.
+# composer-пакет ставится из .tar.gz (type:package в проекте), npm — из .tgz.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish tarballs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Sync frontend package.json version with tag
+        working-directory: frontend
+        run: npm version "${{ steps.version.outputs.version }}" --no-git-tag-version --allow-same-version
+
+      - name: Build backend tarball
+        run: |
+          # Пакуем содержимое backend/ БЕЗ ведущего './': PharData в composer падает
+          # на entry с именем '.' ("Cannot extract '.'"). Перечисляем верхнеуровневые
+          # entries (включая скрытые), исключая dev-артефакты.
+          (
+            cd backend
+            shopt -s nullglob dotglob
+            filtered=()
+            for e in *; do
+              case "$e" in
+                vendor|tests|.phpunit.cache|.phpunit.result.cache|node_modules|Dockerfile.test|phpunit.xml) ;;
+                *) filtered+=( "$e" );;
+              esac
+            done
+            tar -czf "../core-backend-${GITHUB_REF_NAME}.tar.gz" "${filtered[@]}"
+          )
+          echo "--- contents ---"
+          tar -tzf "core-backend-${GITHUB_REF_NAME}.tar.gz"
+
+      - name: Build frontend tarball (npm pack)
+        run: |
+          cd frontend
+          PACKED=$(npm pack --pack-destination .. --json | sed -n 's/.*"filename": "\(.*\)".*/\1/p' | head -n1)
+          cd ..
+          mv "$PACKED" "core-frontend-${GITHUB_REF_NAME}.tgz"
+          ls -lh "core-frontend-${GITHUB_REF_NAME}.tgz"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            core-backend-${{ github.ref_name }}.tar.gz
+            core-frontend-${{ github.ref_name }}.tgz
+          generate_release_notes: true
+          fail_on_unmatched_files: true
