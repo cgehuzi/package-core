@@ -11,8 +11,8 @@
 
 ## Дистрибуция (без Packagist/npm)
 
-Каждый релиз (`vX.Y.Z`) собирается [release-workflow](.github/workflows/release.yml) и
-публикуется как GitHub Release с двумя ассетами:
+Релиз (`vX.Y.Z`) создаётся вручную на GitHub; по событию его публикации
+[release-workflow](.github/workflows/release.yml) прикладывает к нему два ассета:
 
 - `core-backend-vX.Y.Z.tar.gz` — composer ставит через `repositories: [{type:"package", dist:…}]`
   (см. [backend/README.md](backend/README.md#установка));
@@ -25,7 +25,8 @@
 
 1. Внесли изменения, прогнали `make test`.
 2. Обновили `Core::VERSION` (backend) и `version` в `frontend/package.json`, дописали `CHANGELOG.md`.
-3. `git tag vX.Y.Z && git push origin vX.Y.Z` → workflow соберёт и опубликует архивы.
+3. Создали Release на GitHub (тег `vX.Y.Z` + заметки) вручную → workflow по событию
+   `release: published` соберёт и приложит к нему архивы.
 
 Семвер: мажор — breaking changes контракта (`/api/render`, типы), минор — фича, патч — багфикс.
 

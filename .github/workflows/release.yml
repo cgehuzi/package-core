@@ -1,26 +1,26 @@
 name: Release
 
-# Тег vX.Y.Z → собираем два архива (backend, frontend) и публикуем в GitHub Release.
-# composer-пакет ставится из .tar.gz (type:package в проекте), npm — из .tgz.
+# Релиз создаётся вручную на GitHub. На событие "release: published" workflow
+# собирает два архива (backend .tar.gz, frontend .tgz) и прикладывает их к релизу.
+# composer ставит из .tar.gz (type:package у проекта), npm — из .tgz.
 
 on:
-  push:
-    tags:
-      - "v*.*.*"
+  release:
+    types: [published]
 
 permissions:
   contents: write
 
 jobs:
-  release:
-    name: Build and publish tarballs
+  assets:
+    name: Build and attach tarballs
     runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.release.tag_name }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Extract version from tag
-        id: version
-        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+        with:
+          ref: ${{ github.event.release.tag_name }}
 
       - uses: actions/setup-node@v4
         with:
@@ -28,7 +28,7 @@ jobs:
 
       - name: Sync frontend package.json version with tag
         working-directory: frontend
-        run: npm version "${{ steps.version.outputs.version }}" --no-git-tag-version --allow-same-version
+        run: npm version "${TAG#v}" --no-git-tag-version --allow-same-version
 
       - name: Build backend tarball
         run: |
@@ -45,24 +45,24 @@ jobs:
                 *) filtered+=( "$e" );;
               esac
             done
-            tar -czf "../core-backend-${GITHUB_REF_NAME}.tar.gz" "${filtered[@]}"
+            tar -czf "../core-backend-${TAG}.tar.gz" "${filtered[@]}"
           )
           echo "--- contents ---"
-          tar -tzf "core-backend-${GITHUB_REF_NAME}.tar.gz"
+          tar -tzf "core-backend-${TAG}.tar.gz"
 
       - name: Build frontend tarball (npm pack)
         run: |
           cd frontend
           PACKED=$(npm pack --pack-destination .. --json | sed -n 's/.*"filename": "\(.*\)".*/\1/p' | head -n1)
           cd ..
-          mv "$PACKED" "core-frontend-${GITHUB_REF_NAME}.tgz"
-          ls -lh "core-frontend-${GITHUB_REF_NAME}.tgz"
+          mv "$PACKED" "core-frontend-${TAG}.tgz"
+          ls -lh "core-frontend-${TAG}.tgz"
 
-      - name: Create GitHub Release
+      - name: Attach assets to the release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event.release.tag_name }}
           files: |
-            core-backend-${{ github.ref_name }}.tar.gz
-            core-frontend-${{ github.ref_name }}.tgz
-          generate_release_notes: true
+            core-backend-${{ github.event.release.tag_name }}.tar.gz
+            core-frontend-${{ github.event.release.tag_name }}.tgz
           fail_on_unmatched_files: true
