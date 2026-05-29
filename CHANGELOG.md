@@ -19,12 +19,11 @@
 - Тест-обвязка: Orchestra Testbench + PHPUnit (backend), Vitest + tsc (frontend),
   `docker-compose.test.yml`, `Makefile`.
 - CI (`ci.yml`) и публикация архивов в GitHub Release (`release.yml`).
-- **Перенос референс-среза (CMS→API→SSR):**
-  - backend: модель `Page` + миграция `pages`, render-эндпоинт `GET /api/core/render`
-    (контракт `{status, redirect, locale, route, seo, blocks}`), Filament-ресурс `Page`
-    с Builder-блоками (hero/text) + `CorePlugin` для регистрации на панели проекта.
-    Зависимость `filament/filament: ^4.0`.
-  - frontend: типы `Block`/`RenderResult`, клиент `fetchRender`, резолвер `resolveRoute`,
-    реестр блоков `BlockRenderer` + компоненты `Hero`/`Text`.
+- backend: модель `Page` + миграция `pages`, render-эндпоинт `GET /api/core/render`
+  (контракт `{status, redirect, locale, route, seo, blocks}`), Filament-ресурс `Page`
+  с Builder-блоками (hero/text) + `CorePlugin` для регистрации на панели проекта.
+  Зависимость `filament/filament: ^4.0`.
+- frontend: типы `Block`/`RenderResult`, клиент `fetchRender`, резолвер `resolveRoute`,
+  реестр блоков `BlockRenderer` + компоненты `Hero`/`Text`.
 - Интеграция в skeleton-проект проверена end-to-end (CMS→API→SSR, Filament-ресурс,
   catch-all). npm-пакет ставится tarball'ом, composer — path/tarball.
